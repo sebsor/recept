@@ -361,6 +361,15 @@
     margin-bottom: 8px;
     align-items: center;
   }
+  /* Grid items default to min-width: auto, which for an <input> resolves
+     to the browser's built-in minimum content width (~170-190px) — not
+     zero. That silently overrides the 1fr track's sizing and causes the
+     row to overflow sideways on narrow screens instead of shrinking. This
+     tells the grid the input is allowed to shrink below its own content
+     minimum, which is what actually lets 1fr do its job. */
+  .ingredient-row input {
+    min-width: 0;
+  }
 
   .add-ingredient-btn {
     background: none;
@@ -403,6 +412,13 @@
     gap: 8px;
     margin-bottom: 8px;
     align-items: start;
+  }
+  /* Same fix as .ingredient-row above — a <textarea> has the same
+     min-width: auto default that can force grid overflow on narrow
+     screens. Steps has more slack (only 3 columns vs 4) so it hasn't
+     visibly broken yet, but the underlying cause is identical. */
+  .step-row textarea {
+    min-width: 0;
   }
   .step-number {
     font-family: var(--font-mono);
