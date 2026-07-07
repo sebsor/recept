@@ -772,15 +772,6 @@ async function renderEditForm() {
   const existing = editingExisting;
   const cuisines = await RecipeRepository.getCuisines();
 
-  const existingSteps = existing
-    ? (Array.isArray(existing.steps) ? existing.steps.slice()
-        : (existing.instructions ? existing.instructions.split('\n').filter(s => s.trim()) : ['']))
-    : [''];
-
-  editState = existing
-    ? { ...existing, ingredients: existing.ingredients.map(i => ({ ...i })), steps: existingSteps }
-    : { title: '', cuisine: '', servings: '', ingredients: [{ name: '', amount: '', unit: '' }], steps: [''], photo: null };
-
   container.innerHTML = `
     <div class="page-toolbar">
       <button class="back-link" onclick="navigateTo('${existing ? '#/recipe/' + existing.id : '/list'}')">&larr; Cancel</button>
