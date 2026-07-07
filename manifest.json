@@ -1,0 +1,22 @@
+{
+  "name": "Our Menu",
+  "short_name": "Our Menu",
+  "description": "Recipes we always come back to.",
+  "start_url": "index.html",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#A8481F",
+  "theme_color": "#A8481F",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

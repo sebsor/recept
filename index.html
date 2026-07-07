@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Our Menu</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#A8481F">
+<link rel="apple-touch-icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -447,8 +450,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
   // ---- Fill these in from your Supabase project: Settings > API ----
-  const SUPABASE_URL = 'https://giqilxztbdksygzgihzx.supabase.co';
-  const SUPABASE_ANON_KEY = 'sb_publishable_CtlF7JfMYWzzf7QtrK2dEg_9-aZDxI-';
+  const SUPABASE_URL = 'YOUR_SUPABASE_PROJECT_URL';
+  const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 </script>
 <script>
@@ -588,6 +591,19 @@ async function render() {
 
 window.addEventListener('hashchange', render);
 window.addEventListener('DOMContentLoaded', render);
+
+// Registering this is what actually makes the app installable — a
+// manifest alone isn't enough for Chrome/Android's install criteria.
+// Feature-detected since older browsers don't support service workers at
+// all, and wrapped in .catch so a registration failure (e.g. testing
+// locally via file:// instead of a real server) doesn't break the app.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch((err) => {
+      console.error('Service worker registration failed:', err);
+    });
+  });
+}
 
 let listState = { search: '', cuisine: '' };
 
