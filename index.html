@@ -92,6 +92,7 @@
     border-radius: var(--radius-sm);
     padding: 11px 20px;
     cursor: pointer;
+    white-space: nowrap;
     transition: transform 0.08s ease, background 0.15s ease, box-shadow 0.15s ease;
   }
   .btn:active { transform: scale(0.97); }
@@ -424,6 +425,7 @@
     .app-header h1 { font-size: 32px; }
     .detail-hero { height: 220px; }
     .hero-scrim h2 { font-size: 26px; }
+    .form-row { flex-direction: column; }
     .ingredient-row { grid-template-columns: 1fr 70px 70px 28px; }
     .step-row { grid-template-columns: 22px 1fr 60px; }
   }
@@ -439,56 +441,118 @@
   <div id="view-edit" hidden></div>
 </div>
 
+<!-- Supabase client library, loaded as a plain script tag (no build step —
+     matches how the rest of this app is loaded). Exposes a global `supabase`
+     object with .createClient(), used just below to make our one shared connection. -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const RecipeRepository = (() => {
-  const STORAGE_KEY = 'recipes:data';
-  const CUISINES_KEY = 'recipes:cuisines';
-  const DEFAULT_CUISINES = ['Italian', 'Thai', 'Mexican', 'Indian', 'Swedish', 'Japanese', 'Vegetarian'];
+  // ---- Fill these in from your Supabase project: Settings > API ----
+  const SUPABASE_URL = 'https://giqilxztbdksygzgihzx.supabase.co/rest/v1/';
+  const SUPABASE_ANON_KEY = 'sb_publishable_CtlF7JfMYWzzf7QtrK2dEg_9-aZDxI-';
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+</script>
+<script>
+/* =========================================================================
+   REPOSITORY LAYER — now backed by Supabase instead of localStorage.
+   The public shape (getAll/get/save/delete/getCuisines/addCuisine) is
+   UNCHANGED from the mock version — that's the whole point of the
+   repository pattern. What changed is that every method is now async
+   (it waits on a network request), and there's a new uploadPhoto() method
+   since photos now live in Supabase Storage, not as base64 blobs.
+   ========================================================================= */
+const RecipeRepository = {
+  async getAll() {
+    const { data, error } = await supabaseClient
+      .from('recipes')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) { console.error('getAll failed:', error); return []; }
+    return data.map(rowToRecipe);
+  },
 
-  function readAll() {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  }
-  function writeAll(recipes) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(recipes));
-  }
+  async get(id) {
+    const { data, error } = await supabaseClient
+      .from('recipes')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+    if (error || !data) return null;
+    return rowToRecipe(data);
+  },
 
-  return {
-    getAll() {
-      return readAll().sort((a, b) => b.createdAt - a.createdAt);
-    },
-    get(id) {
-      return readAll().find(r => r.id === id) || null;
-    },
-    save(recipe) {
-      const all = readAll();
-      if (recipe.id) {
-        const idx = all.findIndex(r => r.id === recipe.id);
-        if (idx >= 0) { all[idx] = recipe; writeAll(all); return recipe; }
-      }
-      recipe.id = crypto.randomUUID();
-      recipe.createdAt = Date.now();
-      all.push(recipe);
-      writeAll(all);
-      return recipe;
-    },
-    delete(id) {
-      writeAll(readAll().filter(r => r.id !== id));
-    },
-    getCuisines() {
-      const raw = localStorage.getItem(CUISINES_KEY);
-      return raw ? JSON.parse(raw) : DEFAULT_CUISINES;
-    },
-    addCuisine(name) {
-      const list = this.getCuisines();
-      if (!list.includes(name)) {
-        list.push(name);
-        localStorage.setItem(CUISINES_KEY, JSON.stringify(list));
-      }
-      return list;
+  async save(recipe) {
+    const row = {
+      title: recipe.title,
+      cuisine: recipe.cuisine || null,
+      servings: recipe.servings ? parseInt(recipe.servings, 10) : null,
+      ingredients: recipe.ingredients,
+      steps: recipe.steps,
+      photo_url: recipe.photo || null
+    };
+
+    if (recipe.id) {
+      const { data, error } = await supabaseClient
+        .from('recipes').update(row).eq('id', recipe.id).select().single();
+      if (error) throw error;
+      return rowToRecipe(data);
+    } else {
+      const { data, error } = await supabaseClient
+        .from('recipes').insert(row).select().single();
+      if (error) throw error;
+      return rowToRecipe(data);
     }
+  },
+
+  async delete(id) {
+    const { error } = await supabaseClient.from('recipes').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  async getCuisines() {
+    const { data, error } = await supabaseClient
+      .from('cuisines').select('name').order('name');
+    if (error) { console.error('getCuisines failed:', error); return []; }
+    return data.map(row => row.name);
+  },
+
+  async addCuisine(name) {
+    // upsert + ignoreDuplicates: name is the primary key, so this is a
+    // no-op if the cuisine already exists instead of throwing a conflict
+    // error — same "add if missing" behavior the old localStorage version had.
+    const { error } = await supabaseClient
+      .from('cuisines').upsert({ name }, { onConflict: 'name', ignoreDuplicates: true });
+    if (error) console.error('addCuisine failed:', error);
+  },
+
+  // Uploads a photo file to the 'recipe-photos' storage bucket and returns
+  // its public URL. Called from handleSave, not from the form directly —
+  // the file only needs to actually upload once you hit "Save recipe".
+  async uploadPhoto(file) {
+    const ext = file.name.split('.').pop();
+    const path = `${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabaseClient.storage.from('recipe-photos').upload(path, file);
+    if (error) throw error;
+    const { data } = supabaseClient.storage.from('recipe-photos').getPublicUrl(path);
+    return data.publicUrl;
+  }
+};
+
+// Maps a database row (snake_case, as Postgres conventionally uses) to the
+// shape the rest of the app already expects (camelCase `photo`, `createdAt`)
+// — this is the one place that translation happens, so the three views
+// never need to know the database's column names.
+function rowToRecipe(row) {
+  return {
+    id: row.id,
+    title: row.title,
+    cuisine: row.cuisine,
+    servings: row.servings,
+    ingredients: row.ingredients || [],
+    steps: row.steps || [],
+    photo: row.photo_url,
+    createdAt: row.created_at
   };
-})();
+}
 
 function navigateTo(path) {
   window.location.hash = path;
@@ -502,7 +566,7 @@ function parseHash() {
   return { view: 'list' };
 }
 
-function render() {
+async function render() {
   const route = parseHash();
   const listEl = document.getElementById('view-list');
   const detailEl = document.getElementById('view-detail');
@@ -512,9 +576,9 @@ function render() {
   detailEl.hidden = route.view !== 'detail';
   editEl.hidden = route.view !== 'edit';
 
-  if (route.view === 'list') renderListView();
-  if (route.view === 'detail') renderDetailView(route.id);
-  if (route.view === 'edit') renderEditView(route.id);
+  if (route.view === 'list') await renderListView();
+  if (route.view === 'detail') await renderDetailView(route.id);
+  if (route.view === 'edit') await renderEditView(route.id);
 
   const active = route.view === 'list' ? listEl : (route.view === 'detail' ? detailEl : editEl);
   active.classList.remove('view-enter');
@@ -527,9 +591,9 @@ window.addEventListener('DOMContentLoaded', render);
 
 let listState = { search: '', cuisine: '' };
 
-function renderListView() {
+async function renderListView() {
   const container = document.getElementById('view-list');
-  const cuisines = RecipeRepository.getCuisines();
+  const cuisines = await RecipeRepository.getCuisines();
 
   container.innerHTML = `
     <div class="app-logo-wrap">
@@ -552,23 +616,25 @@ function renderListView() {
         ${cuisines.map(c => `<option value="${c}" ${listState.cuisine === c ? 'selected' : ''}>${c}</option>`).join('')}
       </select>
     </div>
-    <div id="recipe-grid-container"></div>
+    <div id="recipe-grid-container">
+      <div class="empty-state"><div class="stamp">Loading…</div></div>
+    </div>
   `;
 
   document.getElementById('search-input').addEventListener('input', e => {
     listState.search = e.target.value;
-    updateRecipeGrid();
+    updateRecipeGrid(); // only re-renders the grid, not this input
   });
   document.getElementById('cuisine-filter').addEventListener('change', e => {
     listState.cuisine = e.target.value;
     updateRecipeGrid();
   });
 
-  updateRecipeGrid();
+  await updateRecipeGrid();
 }
 
-function updateRecipeGrid() {
-  const recipes = RecipeRepository.getAll();
+async function updateRecipeGrid() {
+  const recipes = await RecipeRepository.getAll();
   const filtered = recipes.filter(r => {
     const matchesSearch = !listState.search ||
       r.title.toLowerCase().includes(listState.search.toLowerCase()) ||
@@ -607,9 +673,10 @@ function renderRecipeCard(r) {
   `;
 }
 
-function renderDetailView(id) {
+async function renderDetailView(id) {
   const container = document.getElementById('view-detail');
-  const r = RecipeRepository.get(id);
+  container.innerHTML = `<div class="empty-state"><div class="stamp">Loading…</div></div>`;
+  const r = await RecipeRepository.get(id);
 
   if (!r) {
     container.innerHTML = `
@@ -663,19 +730,21 @@ function renderDetailView(id) {
   `;
 }
 
-function handleDelete(id) {
+async function handleDelete(id) {
   if (confirm("Delete this recipe? This can't be undone.")) {
-    RecipeRepository.delete(id);
+    await RecipeRepository.delete(id);
     navigateTo('/list');
   }
 }
 
 let editState = { ingredients: [], photo: null };
 
-function renderEditView(id) {
+async function renderEditView(id) {
   const container = document.getElementById('view-edit');
-  const existing = id ? RecipeRepository.get(id) : null;
-  const cuisines = RecipeRepository.getCuisines();
+  container.innerHTML = `<div class="empty-state"><div class="stamp">Loading…</div></div>`;
+
+  const existing = id ? await RecipeRepository.get(id) : null;
+  const cuisines = await RecipeRepository.getCuisines();
 
   const existingSteps = existing
     ? (Array.isArray(existing.steps) ? existing.steps.slice()
@@ -719,7 +788,7 @@ function renderEditView(id) {
         <div class="form-field">
           <label>Photo</label>
           <div class="photo-upload" onclick="document.getElementById('f-photo').click()">
-            ${editState.photo ? `<img src="${editState.photo}" alt="">` : '<span>Click to upload a photo</span>'}
+            ${(editState.photoPreviewUrl || editState.photo) ? `<img src="${editState.photoPreviewUrl || editState.photo}" alt="">` : '<span>Click to upload a photo</span>'}
             <input type="file" id="f-photo" accept="image/*">
           </div>
         </div>
@@ -809,43 +878,62 @@ function handleMoveStep(idx, direction) {
   renderStepRows();
 }
 
-function handleAddCuisine() {
+async function handleAddCuisine() {
   const name = prompt('New cuisine/category name:');
   if (name && name.trim()) {
-    RecipeRepository.addCuisine(name.trim());
-    renderEditView(editState.id || null);
+    await RecipeRepository.addCuisine(name.trim());
+    await renderEditView(editState.id || null);
     document.getElementById('f-cuisine').value = name.trim();
   }
 }
 
-function handlePhotoUpload(e) {
+async function handlePhotoUpload(e) {
   const file = e.target.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = () => {
-    editState.photo = reader.result;
-    renderEditView(editState.id || null);
-  };
-  reader.readAsDataURL(file);
+  // Stash the raw file for upload at save time; URL.createObjectURL gives an
+  // instant local preview without needing to read/encode the file yet —
+  // much cheaper than the old FileReader-to-base64 approach, and we only
+  // pay the real upload cost once, on Save, not on every re-render.
+  editState.photoFile = file;
+  editState.photoPreviewUrl = URL.createObjectURL(file);
+  await renderEditView(editState.id || null);
 }
 
-function handleSave(existingId) {
+async function handleSave(existingId) {
   const title = document.getElementById('f-title').value.trim();
   if (!title) { alert('Give the recipe a title.'); return; }
 
-  const recipe = {
-    id: existingId || null,
-    title,
-    cuisine: document.getElementById('f-cuisine').value,
-    servings: document.getElementById('f-servings').value,
-    ingredients: editState.ingredients.filter(i => i.name.trim()),
-    steps: editState.steps.map(s => s.trim()).filter(Boolean),
-    photo: editState.photo,
-    createdAt: editState.createdAt || null
-  };
+  // Unlike localStorage, this call can genuinely fail (dropped wifi, a
+  // typo'd Supabase key, the free-tier project being paused) — so we
+  // disable the button and give feedback instead of assuming success.
+  const saveBtn = document.querySelector('#view-edit .btn-primary');
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Saving…';
 
-  const saved = RecipeRepository.save(recipe);
-  navigateTo('/recipe/' + saved.id);
+  try {
+    let photoUrl = editState.photo || null;
+    if (editState.photoFile) {
+      photoUrl = await RecipeRepository.uploadPhoto(editState.photoFile);
+    }
+
+    const recipe = {
+      id: existingId || null,
+      title,
+      cuisine: document.getElementById('f-cuisine').value,
+      servings: document.getElementById('f-servings').value,
+      ingredients: editState.ingredients.filter(i => i.name.trim()),
+      steps: editState.steps.map(s => s.trim()).filter(Boolean),
+      photo: photoUrl
+    };
+
+    const saved = await RecipeRepository.save(recipe);
+    navigateTo('/recipe/' + saved.id);
+  } catch (err) {
+    console.error('Save failed:', err);
+    alert("Couldn't save the recipe — check your connection and try again.");
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Save recipe';
+  }
 }
 
 function getStepsForDisplay(recipe) {
