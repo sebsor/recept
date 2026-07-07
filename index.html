@@ -521,7 +521,7 @@ const RecipeRepository = {
     // error — same "add if missing" behavior the old localStorage version had.
     const { error } = await supabaseClient
       .from('cuisines').upsert({ name }, { onConflict: 'name', ignoreDuplicates: true });
-    if (error) console.error('addCuisine failed:', error);
+    if (error) throw error;
   },
 
   // Uploads a photo file to the 'recipe-photos' storage bucket and returns
@@ -738,12 +738,38 @@ async function handleDelete(id) {
 }
 
 let editState = { ingredients: [], photo: null };
+// The original DB row being edited (or null for a new recipe) — set once
+// per navigation into this view by renderEditView, then just read (never
+// reset) by renderEditForm, so mid-edit refreshes (photo pick, add cuisine)
+// don't wipe out whatever you've already typed.
+let editingExisting = null;
 
 async function renderEditView(id) {
   const container = document.getElementById('view-edit');
   container.innerHTML = `<div class="empty-state"><div class="stamp">Loading…</div></div>`;
 
   const existing = id ? await RecipeRepository.get(id) : null;
+  editingExisting = existing;
+
+  const existingSteps = existing
+    ? (Array.isArray(existing.steps) ? existing.steps.slice()
+        : (existing.instructions ? existing.instructions.split('\n').filter(s => s.trim()) : ['']))
+    : [''];
+
+  editState = existing
+    ? { ...existing, ingredients: existing.ingredients.map(i => ({ ...i })), steps: existingSteps }
+    : { title: '', cuisine: '', servings: '', ingredients: [{ name: '', amount: '', unit: '' }], steps: [''], photo: null };
+
+  await renderEditForm();
+}
+
+// Redraws the form from whatever's CURRENTLY in editState, without
+// re-fetching the recipe or resetting editState. This is what
+// handlePhotoUpload and handleAddCuisine call — they've already updated
+// editState directly, they just need the DOM to reflect it.
+async function renderEditForm() {
+  const container = document.getElementById('view-edit');
+  const existing = editingExisting;
   const cuisines = await RecipeRepository.getCuisines();
 
   const existingSteps = existing
@@ -880,10 +906,14 @@ function handleMoveStep(idx, direction) {
 
 async function handleAddCuisine() {
   const name = prompt('New cuisine/category name:');
-  if (name && name.trim()) {
+  if (!name || !name.trim()) return;
+  try {
     await RecipeRepository.addCuisine(name.trim());
-    await renderEditView(editState.id || null);
+    await renderEditForm();
     document.getElementById('f-cuisine').value = name.trim();
+  } catch (err) {
+    console.error('Add cuisine failed:', err);
+    alert("Couldn't add that cuisine — check your connection and try again.");
   }
 }
 
@@ -896,7 +926,7 @@ async function handlePhotoUpload(e) {
   // pay the real upload cost once, on Save, not on every re-render.
   editState.photoFile = file;
   editState.photoPreviewUrl = URL.createObjectURL(file);
-  await renderEditView(editState.id || null);
+  await renderEditForm();
 }
 
 async function handleSave(existingId) {
