@@ -3,42 +3,50 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Our Recipes</title>
+<title>Our Menu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
-  /* ===== Design tokens ===== */
+  /* =========================================================================
+     DESIGN TOKENS — "leather menu cover holding cream pages" concept.
+     --clay is the dominant chrome color (page background, header, primary
+     buttons) — the "cover." --bone is the surface every actual recipe lives
+     on (cards, the detail panel, the form) — the "pages." Content you need
+     to read closely while cooking always sits on --bone for contrast;
+     --clay is reserved for navigation chrome and hero moments.
+     ========================================================================= */
   :root {
-    --bg: #E4E9DA;           /* soft sage/putty background — not cream */
-    --surface: #F4F2E8;      /* card surface, slightly lighter/warmer than bg */
-    --surface-raised: #FFFFFF;
-    --ink: #2B2620;          /* near-black warm charcoal, body text */
-    --ink-soft: #5C5646;     /* secondary text */
-    --cocoa: #5C3A21;        /* headers, primary accent — deep brown, not terracotta */
-    --mustard: #C89B3C;      /* tag/highlight accent */
-    --mustard-soft: #EDE0BE; /* tag background */
-    --line: #C9CBB8;         /* hairline borders */
-    --danger: #8B3A2E;
+    --clay: #A8481F;
+    --clay-hover: #8C3B18;
+    --espresso: #241812;
+    --bone: #F3EAD9;
+    --bone-raised: #FFFDF8;
+    --cream-text: #F7EEDD;
+    --muted-on-bone: #7A6A57;
+    --muted-on-clay: rgba(247, 238, 221, 0.72);
+    --gold: #C9A227;
+    --gold-soft: #E9DBA9;
+    --rust: #B8552F;
+    --line-on-bone: rgba(36, 24, 18, 0.14);
+    --danger: #A23B2E;
 
     --font-display: 'Fraunces', Georgia, serif;
     --font-body: 'Public Sans', -apple-system, BlinkMacSystemFont, sans-serif;
     --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
 
-    --radius: 10px;
-    --radius-sm: 6px;
-  }
-
-  @font-face {
-    font-family: 'Fraunces';
-    src: local('Georgia');
+    --radius: 16px;
+    --radius-sm: 8px;
   }
 
   * { box-sizing: border-box; }
 
   body {
     margin: 0;
-    background: var(--bg);
-    color: var(--ink);
+    background: var(--clay);
+    color: var(--cream-text);
     font-family: var(--font-body);
-    line-height: 1.5;
+    line-height: 1.55;
     min-height: 100vh;
   }
 
@@ -47,34 +55,33 @@
   .app {
     max-width: 720px;
     margin: 0 auto;
-    padding: 24px 20px 80px;
+    padding: 28px 20px 90px;
   }
 
-  /* ===== Header ===== */
-  .app-logo-wrap {
-    text-align: center;
-    margin-bottom: 12px;
-  }
+  .app-logo-wrap { text-align: center; margin-bottom: 10px; }
   .app-logo-wrap img {
-    width: 160px;
-    height: 160px;
+    width: 120px;
+    height: 120px;
     border-radius: 50%;
+    border: 3px solid var(--gold);
   }
 
-  .app-header {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    margin-bottom: 20px;
-  }
-
+  .app-header { text-align: center; margin-bottom: 28px; }
   .app-header h1 {
     font-family: var(--font-display);
     font-weight: 600;
-    font-size: 28px;
-    color: var(--cocoa);
-    margin: 0;
+    font-size: 40px;
+    color: var(--cream-text);
+    margin: 4px 0 6px;
     letter-spacing: -0.01em;
+  }
+  .app-tagline {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gold-soft);
+    margin: 0 0 20px;
   }
 
   .btn {
@@ -83,21 +90,21 @@
     font-weight: 600;
     border: none;
     border-radius: var(--radius-sm);
-    padding: 10px 16px;
+    padding: 11px 20px;
     cursor: pointer;
-    transition: transform 0.08s ease, background 0.15s ease;
+    transition: transform 0.08s ease, background 0.15s ease, box-shadow 0.15s ease;
   }
   .btn:active { transform: scale(0.97); }
-  .btn:focus-visible { outline: 2px solid var(--cocoa); outline-offset: 2px; }
+  .btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 
-  .btn-primary { background: var(--cocoa); color: var(--surface); }
-  .btn-primary:hover { background: #4a2f1a; }
+  .btn-primary { background: var(--gold); color: var(--espresso); box-shadow: 0 2px 10px rgba(36,24,18,0.18); }
+  .btn-primary:hover { background: #dbb33b; }
 
-  .btn-secondary { background: var(--surface-raised); color: var(--ink); border: 1px solid var(--line); }
-  .btn-secondary:hover { background: var(--mustard-soft); }
+  .btn-secondary { background: var(--bone-raised); color: var(--espresso); border: 1px solid var(--line-on-bone); }
+  .btn-secondary:hover { background: var(--gold-soft); }
 
   .btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
-  .btn-danger:hover { background: rgba(139,58,46,0.08); }
+  .btn-danger:hover { background: rgba(162,59,46,0.08); }
 
   .btn-icon {
     background: transparent;
@@ -105,208 +112,238 @@
     cursor: pointer;
     font-size: 20px;
     padding: 4px 8px;
-    color: var(--ink-soft);
+    color: var(--muted-on-bone);
   }
-  .btn-icon:focus-visible { outline: 2px solid var(--cocoa); outline-offset: 2px; }
+  .btn-icon:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .btn-icon:disabled { opacity: 0.25; cursor: default; }
 
-  /* ===== Filter bar ===== */
-  .filter-bar {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-  }
-
-  .search-input, select, input[type=text], input[type=number], textarea {
+  select, input[type=text], input[type=number], textarea {
     font-family: var(--font-body);
     font-size: 14px;
     padding: 10px 12px;
-    border: 1px solid var(--line);
+    border: 1px solid var(--line-on-bone);
     border-radius: var(--radius-sm);
-    background: var(--surface-raised);
-    color: var(--ink);
+    background: var(--bone-raised);
+    color: var(--espresso);
   }
-  .search-input:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible {
-    outline: 2px solid var(--cocoa);
+  select:focus-visible, input:focus-visible, textarea:focus-visible {
+    outline: 2px solid var(--gold);
     outline-offset: 1px;
   }
 
-  .search-input { flex: 1; min-width: 160px; }
+  .search-pill {
+    display: flex;
+    align-items: center;
+    background: var(--bone-raised);
+    border-radius: 999px;
+    padding: 4px 6px;
+    margin-bottom: 26px;
+    box-shadow: 0 3px 14px rgba(0,0,0,0.15);
+  }
+  .search-pill:focus-within { box-shadow: 0 0 0 2px var(--gold), 0 3px 14px rgba(0,0,0,0.15); }
+  .search-pill input[type=text] {
+    border: none; background: transparent; flex: 1; padding: 10px 14px; border-radius: 999px;
+  }
+  .search-pill input[type=text]:focus-visible { outline: none; }
+  .pill-divider { width: 1px; height: 24px; background: var(--line-on-bone); flex-shrink: 0; }
+  .search-pill select {
+    border: none; background: transparent; padding: 10px 14px; border-radius: 999px;
+    font-size: 13px; color: var(--muted-on-bone);
+  }
+  .search-pill select:focus-visible { outline: none; }
 
-  /* ===== Recipe card (index-tab signature) ===== */
   .recipe-grid {
     display: grid;
-    gap: 18px;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 22px;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
   }
 
   .recipe-card {
-    position: relative;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    padding: 20px 16px 16px;
-    cursor: pointer;
-    transition: transform 0.12s ease, box-shadow 0.12s ease;
-    text-decoration: none;
     display: block;
-    color: var(--ink);
+    text-decoration: none;
+    color: inherit;
+    background: var(--bone);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
   }
   .recipe-card:hover, .recipe-card:focus-visible {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(43,38,32,0.12);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 26px rgba(0,0,0,0.24);
     outline: none;
   }
-  .recipe-card:focus-visible { outline: 2px solid var(--cocoa); outline-offset: 2px; }
+  .recipe-card:focus-visible { box-shadow: 0 0 0 2px var(--gold), 0 10px 26px rgba(0,0,0,0.24); }
 
-  /* the "index tab" — die-cut label sticking up from the card top edge */
-  .recipe-tab {
-    position: absolute;
-    top: -11px;
-    left: 16px;
-    background: var(--mustard);
-    color: var(--cocoa);
+  .card-photo { width: 100%; height: 150px; overflow: hidden; }
+  .card-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .card-photo-empty {
+    background: repeating-linear-gradient(135deg, var(--gold-soft), var(--gold-soft) 10px, var(--bone) 10px, var(--bone) 20px);
+    opacity: 0.6;
+  }
+
+  .card-body { padding: 16px 18px 18px; }
+  .card-tag {
     font-family: var(--font-mono);
     font-size: 10px;
     font-weight: 600;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
-    padding: 4px 10px;
-    border-radius: 4px 4px 0 0;
-    clip-path: polygon(6% 0, 94% 0, 100% 100%, 0% 100%);
+    color: var(--rust);
   }
-
   .recipe-card h3 {
     font-family: var(--font-display);
-    font-size: 19px;
+    font-size: 20px;
     font-weight: 600;
-    margin: 6px 0 8px;
-    color: var(--cocoa);
+    color: var(--espresso);
+    margin: 6px 0 10px;
+    line-height: 1.2;
   }
-
-  .recipe-card .meta {
-    font-size: 13px;
-    color: var(--ink-soft);
+  .card-meta {
     font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted-on-bone);
   }
 
-  .recipe-card .photo-thumb {
-    width: 100%;
-    height: 120px;
-    object-fit: cover;
-    border-radius: var(--radius-sm);
-    margin-bottom: 10px;
-    background: var(--mustard-soft);
-  }
-
-  .empty-state {
-    text-align: center;
-    padding: 60px 20px;
-    color: var(--ink-soft);
-  }
+  .empty-state { text-align: center; padding: 70px 20px; color: var(--muted-on-clay); }
   .empty-state .stamp {
     font-family: var(--font-display);
-    font-size: 20px;
-    color: var(--cocoa);
+    font-size: 22px;
+    color: var(--cream-text);
     margin-bottom: 8px;
   }
 
-  /* ===== Detail view ===== */
+  .page-toolbar { margin-bottom: 16px; }
   .back-link {
     display: inline-flex;
     align-items: center;
     gap: 6px;
     font-size: 14px;
     font-weight: 600;
-    color: var(--ink-soft);
+    color: var(--cream-text);
     text-decoration: none;
-    margin-bottom: 16px;
     background: none;
     border: none;
     cursor: pointer;
-    padding: 4px 0;
+    padding: 6px 0;
   }
-  .back-link:hover { color: var(--cocoa); }
-  .back-link:focus-visible { outline: 2px solid var(--cocoa); outline-offset: 2px; }
+  .back-link:hover { color: var(--gold-soft); }
+  .back-link:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 
-  .detail-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 12px;
-    margin-bottom: 4px;
+  .content-panel {
+    background: var(--bone);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: 0 10px 34px rgba(0,0,0,0.22);
+    margin-bottom: 20px;
   }
+  .detail-body { padding: 24px 24px 28px; color: var(--espresso); }
 
-  .detail-header h2 {
+  .panel-title {
     font-family: var(--font-display);
-    font-size: 30px;
-    color: var(--cocoa);
-    margin: 0;
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--espresso);
+    margin: 0 0 20px;
   }
 
-  .detail-actions { display: flex; gap: 8px; flex-shrink: 0; }
-
-  .tag-pill {
-    display: inline-block;
-    background: var(--mustard-soft);
-    color: var(--cocoa);
+  .detail-hero { position: relative; width: 100%; height: 280px; }
+  .detail-hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .hero-scrim {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    padding: 20px 24px;
+    background: linear-gradient(180deg, rgba(36,24,18,0) 40%, rgba(36,24,18,0.8) 100%);
+  }
+  .hero-tag {
     font-family: var(--font-mono);
     font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
-    padding: 4px 10px;
-    border-radius: 999px;
-    margin: 8px 0 16px;
+    color: var(--gold-soft);
+    margin-bottom: 6px;
+    display: block;
+  }
+  .hero-scrim h2 {
+    font-family: var(--font-display);
+    font-size: 32px;
+    color: #FBF6EC;
+    margin: 0;
+    line-height: 1.15;
   }
 
-  .detail-photo {
-    width: 100%;
-    max-height: 320px;
-    object-fit: cover;
-    border-radius: var(--radius);
-    margin-bottom: 20px;
-    background: var(--mustard-soft);
+  .detail-header-plain { padding: 24px 24px 0; }
+  .detail-header-plain .hero-tag { color: var(--rust); }
+  .detail-header-plain h2 {
+    font-family: var(--font-display);
+    font-size: 30px;
+    color: var(--espresso);
+    margin: 6px 0 0;
   }
 
+  .detail-toprow {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 8px; flex-wrap: wrap; gap: 10px;
+  }
   .detail-servings {
     font-family: var(--font-mono);
-    font-size: 14px;
-    color: var(--ink-soft);
-    margin-bottom: 20px;
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted-on-bone);
   }
+  .detail-actions { display: flex; gap: 8px; }
 
   .section-label {
     font-family: var(--font-display);
-    font-size: 16px;
+    font-size: 18px;
     font-weight: 600;
-    color: var(--cocoa);
-    margin: 24px 0 10px;
-    padding-bottom: 6px;
-    border-bottom: 1px solid var(--line);
+    color: var(--espresso);
+    margin: 26px 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--gold);
+    display: inline-block;
   }
 
   .ingredient-list { list-style: none; padding: 0; margin: 0; }
   .ingredient-list li {
     display: flex;
-    gap: 10px;
-    padding: 8px 0;
-    border-bottom: 1px dashed var(--line);
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px dashed var(--line-on-bone);
     font-size: 15px;
   }
   .ingredient-list .amt {
     font-family: var(--font-mono);
-    color: var(--cocoa);
+    color: var(--rust);
     font-weight: 600;
-    min-width: 90px;
     flex-shrink: 0;
   }
 
-  .instructions { white-space: pre-wrap; font-size: 15px; }
+  .steps-list { list-style: none; padding: 0; margin: 0; counter-reset: step; }
+  .steps-list li {
+    position: relative;
+    padding: 0 0 18px 40px;
+    font-size: 15px;
+    counter-increment: step;
+  }
+  .steps-list li::before {
+    content: counter(step);
+    position: absolute; left: 0; top: -2px;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--gold);
+    color: var(--espresso);
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 13px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps-list li:last-child { padding-bottom: 0; }
 
-  /* ===== Form (add/edit) ===== */
   .form-field { margin-bottom: 16px; display: flex; flex-direction: column; gap: 6px; }
-  .form-field label { font-size: 13px; font-weight: 600; color: var(--ink-soft); }
+  .form-field label { font-size: 13px; font-weight: 600; color: var(--muted-on-bone); }
   .form-row { display: flex; gap: 12px; }
   .form-row .form-field { flex: 1; }
 
@@ -323,26 +360,28 @@
 
   .add-ingredient-btn {
     background: none;
-    border: 1px dashed var(--line);
+    border: 1px dashed var(--line-on-bone);
     border-radius: var(--radius-sm);
     padding: 8px;
     width: 100%;
-    color: var(--ink-soft);
+    color: var(--muted-on-bone);
     font-size: 13px;
     cursor: pointer;
     margin-top: 4px;
   }
-  .add-ingredient-btn:hover { border-color: var(--cocoa); color: var(--cocoa); }
+  .add-ingredient-btn:hover { border-color: var(--gold); color: var(--rust); }
 
   textarea { width: 100%; min-height: 140px; font-family: var(--font-body); resize: vertical; }
 
   .photo-upload {
-    border: 1px dashed var(--line);
+    border: 1px dashed var(--line-on-bone);
     border-radius: var(--radius);
     padding: 16px;
     text-align: center;
     cursor: pointer;
+    color: var(--muted-on-bone);
   }
+  .photo-upload:hover { border-color: var(--gold); }
   .photo-upload img { max-width: 100%; max-height: 200px; border-radius: var(--radius-sm); }
   .photo-upload input[type=file] { display: none; }
 
@@ -351,12 +390,42 @@
     gap: 10px;
     margin-top: 28px;
     padding-top: 20px;
-    border-top: 1px solid var(--line);
+    border-top: 1px solid var(--line-on-bone);
+  }
+
+  .step-row {
+    display: grid;
+    grid-template-columns: 28px 1fr 84px;
+    gap: 8px;
+    margin-bottom: 8px;
+    align-items: start;
+  }
+  .step-number {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    color: var(--rust);
+    padding-top: 10px;
+    text-align: right;
+  }
+  .step-row textarea { min-height: 56px; font-size: 14px; }
+  .step-controls { display: flex; flex-direction: column; gap: 2px; }
+  .step-controls .btn-icon { font-size: 15px; padding: 2px 6px; line-height: 1.2; }
+
+  @keyframes viewEnter {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .view-enter { animation: viewEnter 0.32s ease; }
+  @media (prefers-reduced-motion: reduce) {
+    .view-enter { animation: none; }
   }
 
   @media (max-width: 480px) {
-    .detail-header h2 { font-size: 24px; }
+    .app-header h1 { font-size: 32px; }
+    .detail-hero { height: 220px; }
+    .hero-scrim h2 { font-size: 26px; }
     .ingredient-row { grid-template-columns: 1fr 70px 70px 28px; }
+    .step-row { grid-template-columns: 22px 1fr 60px; }
   }
 
   [hidden] { display: none !important; }
@@ -371,14 +440,6 @@
 </div>
 
 <script>
-/* =========================================================================
-   REPOSITORY LAYER
-   This is the ONLY code that touches storage. Every view below calls
-   RecipeRepository.* — never localStorage directly. When we move to
-   Supabase, only the internals of this object change (localStorage.getItem
-   becomes an await supabase.from('recipes').select(), etc). The three
-   views never need to change, because they only know about this interface.
-   ========================================================================= */
 const RecipeRepository = (() => {
   const STORAGE_KEY = 'recipes:data';
   const CUISINES_KEY = 'recipes:cuisines';
@@ -429,12 +490,6 @@ const RecipeRepository = (() => {
   };
 })();
 
-/* =========================================================================
-   ROUTER
-   Hash-based so GitHub Pages (static hosting, no server routes) never sees
-   a request for /recipe/xyz — the browser only ever asks for index.html,
-   and everything after # is handled here in JS. Refresh always works.
-   ========================================================================= */
 function navigateTo(path) {
   window.location.hash = path;
 }
@@ -449,35 +504,32 @@ function parseHash() {
 
 function render() {
   const route = parseHash();
-  document.getElementById('view-list').hidden = route.view !== 'list';
-  document.getElementById('view-detail').hidden = route.view !== 'detail';
-  document.getElementById('view-edit').hidden = route.view !== 'edit';
+  const listEl = document.getElementById('view-list');
+  const detailEl = document.getElementById('view-detail');
+  const editEl = document.getElementById('view-edit');
+
+  listEl.hidden = route.view !== 'list';
+  detailEl.hidden = route.view !== 'detail';
+  editEl.hidden = route.view !== 'edit';
 
   if (route.view === 'list') renderListView();
   if (route.view === 'detail') renderDetailView(route.id);
   if (route.view === 'edit') renderEditView(route.id);
+
+  const active = route.view === 'list' ? listEl : (route.view === 'detail' ? detailEl : editEl);
+  active.classList.remove('view-enter');
+  void active.offsetWidth;
+  active.classList.add('view-enter');
 }
 
 window.addEventListener('hashchange', render);
 window.addEventListener('DOMContentLoaded', render);
 
-/* =========================================================================
-   LIST VIEW
-   ========================================================================= */
 let listState = { search: '', cuisine: '' };
 
 function renderListView() {
   const container = document.getElementById('view-list');
-  const recipes = RecipeRepository.getAll();
   const cuisines = RecipeRepository.getCuisines();
-
-  const filtered = recipes.filter(r => {
-    const matchesSearch = !listState.search ||
-      r.title.toLowerCase().includes(listState.search.toLowerCase()) ||
-      r.ingredients.some(i => i.name.toLowerCase().includes(listState.search.toLowerCase()));
-    const matchesCuisine = !listState.cuisine || r.cuisine === listState.cuisine;
-    return matchesSearch && matchesCuisine;
-  });
 
   container.innerHTML = `
     <div class="app-logo-wrap">
@@ -487,38 +539,54 @@ function renderListView() {
       </picture>
     </div>
     <div class="app-header">
-      <h1>Our Recipes</h1>
-      <button class="btn btn-primary" onclick="navigateTo('/edit')">+ Add recipe</button>
+      <h1>Our Menu</h1>
+      <p class="app-tagline">Recipes we always come back to</p>
+      <button class="btn btn-primary" onclick="navigateTo('/edit')">+ New Recipe</button>
     </div>
-    <div class="filter-bar">
-      <input class="search-input" type="text" placeholder="Search title or ingredient..."
+    <div class="search-pill">
+      <input type="text" placeholder="Search title or ingredient..."
         value="${escapeHtml(listState.search)}" id="search-input">
+      <div class="pill-divider"></div>
       <select id="cuisine-filter">
         <option value="">All cuisines</option>
         ${cuisines.map(c => `<option value="${c}" ${listState.cuisine === c ? 'selected' : ''}>${c}</option>`).join('')}
       </select>
     </div>
-    ${filtered.length === 0 ? renderEmptyState(recipes.length === 0) : `
-      <div class="recipe-grid">
-        ${filtered.map(renderRecipeCard).join('')}
-      </div>
-    `}
+    <div id="recipe-grid-container"></div>
   `;
 
   document.getElementById('search-input').addEventListener('input', e => {
     listState.search = e.target.value;
-    renderListView();
+    updateRecipeGrid();
   });
   document.getElementById('cuisine-filter').addEventListener('change', e => {
     listState.cuisine = e.target.value;
-    renderListView();
+    updateRecipeGrid();
   });
+
+  updateRecipeGrid();
+}
+
+function updateRecipeGrid() {
+  const recipes = RecipeRepository.getAll();
+  const filtered = recipes.filter(r => {
+    const matchesSearch = !listState.search ||
+      r.title.toLowerCase().includes(listState.search.toLowerCase()) ||
+      r.ingredients.some(i => i.name.toLowerCase().includes(listState.search.toLowerCase()));
+    const matchesCuisine = !listState.cuisine || r.cuisine === listState.cuisine;
+    return matchesSearch && matchesCuisine;
+  });
+
+  document.getElementById('recipe-grid-container').innerHTML =
+    filtered.length === 0
+      ? renderEmptyState(recipes.length === 0)
+      : `<div class="recipe-grid">${filtered.map(renderRecipeCard).join('')}</div>`;
 }
 
 function renderEmptyState(noneAtAll) {
   return `
     <div class="empty-state">
-      <div class="stamp">${noneAtAll ? 'The box is empty' : 'Nothing matches'}</div>
+      <div class="stamp">${noneAtAll ? 'The menu is empty' : 'Nothing matches'}</div>
       <p>${noneAtAll ? 'Add the first recipe worth keeping.' : 'Try a different search or cuisine.'}</p>
     </div>
   `;
@@ -527,48 +595,71 @@ function renderEmptyState(noneAtAll) {
 function renderRecipeCard(r) {
   return `
     <a class="recipe-card" href="#/recipe/${r.id}">
-      <span class="recipe-tab">${escapeHtml(r.cuisine || 'Uncategorized')}</span>
-      ${r.photo ? `<img class="photo-thumb" src="${r.photo}" alt="">` : ''}
-      <h3>${escapeHtml(r.title)}</h3>
-      <div class="meta">serves ${r.servings || '—'}</div>
+      ${r.photo
+        ? `<div class="card-photo"><img src="${r.photo}" alt=""></div>`
+        : `<div class="card-photo card-photo-empty"></div>`}
+      <div class="card-body">
+        <span class="card-tag">${escapeHtml(r.cuisine || 'Uncategorized')}</span>
+        <h3>${escapeHtml(r.title)}</h3>
+        <div class="card-meta">Serves ${r.servings || '—'}</div>
+      </div>
     </a>
   `;
 }
 
-/* =========================================================================
-   DETAIL VIEW
-   ========================================================================= */
 function renderDetailView(id) {
   const container = document.getElementById('view-detail');
   const r = RecipeRepository.get(id);
 
   if (!r) {
-    container.innerHTML = `<button class="back-link" onclick="navigateTo('/list')">&larr; Back</button><p>Recipe not found.</p>`;
+    container.innerHTML = `
+      <div class="page-toolbar"><button class="back-link" onclick="navigateTo('/list')">&larr; Back</button></div>
+      <div class="content-panel"><div class="detail-body"><p>Recipe not found.</p></div></div>
+    `;
     return;
   }
 
   container.innerHTML = `
-    <button class="back-link" onclick="navigateTo('/list')">&larr; Back to recipes</button>
-    <div class="detail-header">
-      <h2>${escapeHtml(r.title)}</h2>
-      <div class="detail-actions">
-        <button class="btn btn-secondary" onclick="navigateTo('/edit/${r.id}')">Edit</button>
-        <button class="btn btn-danger" onclick="handleDelete('${r.id}')">Delete</button>
+    <div class="page-toolbar">
+      <button class="back-link" onclick="navigateTo('/list')">&larr; Back to recipes</button>
+    </div>
+    <div class="content-panel">
+      ${r.photo ? `
+        <div class="detail-hero">
+          <img src="${r.photo}" alt="${escapeHtml(r.title)}">
+          <div class="hero-scrim">
+            <span class="hero-tag">${escapeHtml(r.cuisine || 'Uncategorized')}</span>
+            <h2>${escapeHtml(r.title)}</h2>
+          </div>
+        </div>
+      ` : `
+        <div class="detail-header-plain">
+          <span class="hero-tag">${escapeHtml(r.cuisine || 'Uncategorized')}</span>
+          <h2>${escapeHtml(r.title)}</h2>
+        </div>
+      `}
+      <div class="detail-body">
+        <div class="detail-toprow">
+          <div class="detail-servings">Serves ${r.servings || '—'}</div>
+          <div class="detail-actions">
+            <button class="btn btn-secondary" onclick="navigateTo('/edit/${r.id}')">Edit</button>
+            <button class="btn btn-danger" onclick="handleDelete('${r.id}')">Delete</button>
+          </div>
+        </div>
+
+        <div class="section-label">Ingredients</div>
+        <ul class="ingredient-list">
+          ${r.ingredients.map(i => `
+            <li><span>${escapeHtml(i.name)}</span><span class="amt">${i.amount || ''} ${i.unit || ''}</span></li>
+          `).join('')}
+        </ul>
+
+        <div class="section-label">Steps</div>
+        <ol class="steps-list">
+          ${getStepsForDisplay(r).map(s => `<li>${escapeHtml(s)}</li>`).join('')}
+        </ol>
       </div>
     </div>
-    <span class="tag-pill">${escapeHtml(r.cuisine || 'Uncategorized')}</span>
-    ${r.photo ? `<img class="detail-photo" src="${r.photo}" alt="${escapeHtml(r.title)}">` : ''}
-    <div class="detail-servings">serves ${r.servings || '—'}</div>
-
-    <div class="section-label">Ingredients</div>
-    <ul class="ingredient-list">
-      ${r.ingredients.map(i => `
-        <li><span class="amt">${i.amount || ''} ${i.unit || ''}</span><span>${escapeHtml(i.name)}</span></li>
-      `).join('')}
-    </ul>
-
-    <div class="section-label">Instructions</div>
-    <div class="instructions">${escapeHtml(r.instructions)}</div>
   `;
 }
 
@@ -579,9 +670,6 @@ function handleDelete(id) {
   }
 }
 
-/* =========================================================================
-   EDIT / ADD VIEW
-   ========================================================================= */
 let editState = { ingredients: [], photo: null };
 
 function renderEditView(id) {
@@ -589,62 +677,75 @@ function renderEditView(id) {
   const existing = id ? RecipeRepository.get(id) : null;
   const cuisines = RecipeRepository.getCuisines();
 
+  const existingSteps = existing
+    ? (Array.isArray(existing.steps) ? existing.steps.slice()
+        : (existing.instructions ? existing.instructions.split('\n').filter(s => s.trim()) : ['']))
+    : [''];
+
   editState = existing
-    ? { ...existing, ingredients: existing.ingredients.map(i => ({ ...i })) }
-    : { title: '', cuisine: '', servings: '', ingredients: [{ name: '', amount: '', unit: '' }], instructions: '', photo: null };
+    ? { ...existing, ingredients: existing.ingredients.map(i => ({ ...i })), steps: existingSteps }
+    : { title: '', cuisine: '', servings: '', ingredients: [{ name: '', amount: '', unit: '' }], steps: [''], photo: null };
 
   container.innerHTML = `
-    <button class="back-link" onclick="navigateTo('${existing ? '#/recipe/' + existing.id : '/list'}')">&larr; Cancel</button>
-    <div class="app-header"><h1>${existing ? 'Edit recipe' : 'Add recipe'}</h1></div>
-
-    <div class="form-field">
-      <label for="f-title">Title</label>
-      <input type="text" id="f-title" value="${escapeHtml(editState.title)}" placeholder="Green curry">
+    <div class="page-toolbar">
+      <button class="back-link" onclick="navigateTo('${existing ? '#/recipe/' + existing.id : '/list'}')">&larr; Cancel</button>
     </div>
+    <div class="content-panel">
+      <div class="detail-body">
+        <h1 class="panel-title">${existing ? 'Edit recipe' : 'Add recipe'}</h1>
 
-    <div class="form-row">
-      <div class="form-field">
-        <label for="f-cuisine">Cuisine</label>
-        <div class="cuisine-row">
-          <select id="f-cuisine">
-            <option value="">Select...</option>
-            ${cuisines.map(c => `<option value="${c}" ${editState.cuisine === c ? 'selected' : ''}>${c}</option>`).join('')}
-          </select>
-          <button type="button" class="btn btn-secondary" onclick="handleAddCuisine()">+ New</button>
+        <div class="form-field">
+          <label for="f-title">Title</label>
+          <input type="text" id="f-title" value="${escapeHtml(editState.title)}" placeholder="Green curry">
+        </div>
+
+        <div class="form-row">
+          <div class="form-field">
+            <label for="f-cuisine">Cuisine</label>
+            <div class="cuisine-row">
+              <select id="f-cuisine">
+                <option value="">Select...</option>
+                ${cuisines.map(c => `<option value="${c}" ${editState.cuisine === c ? 'selected' : ''}>${c}</option>`).join('')}
+              </select>
+              <button type="button" class="btn btn-secondary" onclick="handleAddCuisine()">+ New</button>
+            </div>
+          </div>
+          <div class="form-field">
+            <label for="f-servings">Servings</label>
+            <input type="number" id="f-servings" min="1" value="${escapeHtml(String(editState.servings || ''))}" placeholder="4">
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label>Photo</label>
+          <div class="photo-upload" onclick="document.getElementById('f-photo').click()">
+            ${editState.photo ? `<img src="${editState.photo}" alt="">` : '<span>Click to upload a photo</span>'}
+            <input type="file" id="f-photo" accept="image/*">
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label>Ingredients</label>
+          <div id="ingredient-rows"></div>
+          <button type="button" class="add-ingredient-btn" onclick="handleAddIngredientRow()">+ Add ingredient</button>
+        </div>
+
+        <div class="form-field">
+          <label>Steps</label>
+          <div id="step-rows"></div>
+          <button type="button" class="add-ingredient-btn" onclick="handleAddStepRow()">+ Add step</button>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn btn-primary" onclick="handleSave('${existing ? existing.id : ''}')">Save recipe</button>
+          <button class="btn btn-secondary" onclick="navigateTo('${existing ? '#/recipe/' + existing.id : '/list'}')">Cancel</button>
         </div>
       </div>
-      <div class="form-field">
-        <label for="f-servings">Servings</label>
-        <input type="number" id="f-servings" min="1" value="${escapeHtml(String(editState.servings || ''))}" placeholder="4">
-      </div>
-    </div>
-
-    <div class="form-field">
-      <label>Photo</label>
-      <div class="photo-upload" onclick="document.getElementById('f-photo').click()">
-        ${editState.photo ? `<img src="${editState.photo}" alt="">` : '<span>Click to upload a photo</span>'}
-        <input type="file" id="f-photo" accept="image/*">
-      </div>
-    </div>
-
-    <div class="form-field">
-      <label>Ingredients</label>
-      <div id="ingredient-rows"></div>
-      <button type="button" class="add-ingredient-btn" onclick="handleAddIngredientRow()">+ Add ingredient</button>
-    </div>
-
-    <div class="form-field">
-      <label for="f-instructions">Instructions</label>
-      <textarea id="f-instructions" placeholder="1. Heat the oil...">${escapeHtml(editState.instructions)}</textarea>
-    </div>
-
-    <div class="form-actions">
-      <button class="btn btn-primary" onclick="handleSave('${existing ? existing.id : ''}')">Save recipe</button>
-      <button class="btn btn-secondary" onclick="navigateTo('${existing ? '#/recipe/' + existing.id : '/list'}')">Cancel</button>
     </div>
   `;
 
   renderIngredientRows();
+  renderStepRows();
 
   document.getElementById('f-photo').addEventListener('change', handlePhotoUpload);
 }
@@ -671,6 +772,41 @@ function handleAddIngredientRow() {
 function handleRemoveIngredientRow(idx) {
   editState.ingredients.splice(idx, 1);
   renderIngredientRows();
+}
+
+function renderStepRows() {
+  const el = document.getElementById('step-rows');
+  el.innerHTML = editState.steps.map((step, idx) => `
+    <div class="step-row">
+      <span class="step-number">${idx + 1}.</span>
+      <textarea placeholder="Describe this step..."
+        oninput="editState.steps[${idx}] = this.value">${escapeHtml(step)}</textarea>
+      <div class="step-controls">
+        <button type="button" class="btn-icon" onclick="handleMoveStep(${idx}, -1)"
+          aria-label="Move step up" ${idx === 0 ? 'disabled' : ''}>&uarr;</button>
+        <button type="button" class="btn-icon" onclick="handleMoveStep(${idx}, 1)"
+          aria-label="Move step down" ${idx === editState.steps.length - 1 ? 'disabled' : ''}>&darr;</button>
+        <button type="button" class="btn-icon" onclick="handleRemoveStepRow(${idx})" aria-label="Remove step">&times;</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function handleAddStepRow() {
+  editState.steps.push('');
+  renderStepRows();
+}
+function handleRemoveStepRow(idx) {
+  editState.steps.splice(idx, 1);
+  if (editState.steps.length === 0) editState.steps.push('');
+  renderStepRows();
+}
+function handleMoveStep(idx, direction) {
+  const newIdx = idx + direction;
+  if (newIdx < 0 || newIdx >= editState.steps.length) return;
+  const steps = editState.steps;
+  [steps[idx], steps[newIdx]] = [steps[newIdx], steps[idx]];
+  renderStepRows();
 }
 
 function handleAddCuisine() {
@@ -703,7 +839,7 @@ function handleSave(existingId) {
     cuisine: document.getElementById('f-cuisine').value,
     servings: document.getElementById('f-servings').value,
     ingredients: editState.ingredients.filter(i => i.name.trim()),
-    instructions: document.getElementById('f-instructions').value,
+    steps: editState.steps.map(s => s.trim()).filter(Boolean),
     photo: editState.photo,
     createdAt: editState.createdAt || null
   };
@@ -712,7 +848,12 @@ function handleSave(existingId) {
   navigateTo('/recipe/' + saved.id);
 }
 
-/* ===== utility ===== */
+function getStepsForDisplay(recipe) {
+  if (Array.isArray(recipe.steps) && recipe.steps.length) return recipe.steps;
+  if (recipe.instructions) return recipe.instructions.split('\n').filter(s => s.trim());
+  return [];
+}
+
 function escapeHtml(str) {
   if (str === null || str === undefined) return '';
   return String(str)
