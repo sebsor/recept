@@ -503,7 +503,7 @@ const RecipeRepository = {
     const row = {
       title: recipe.title,
       cuisine: recipe.cuisine || null,
-      servings: recipe.servings ? parseInt(recipe.servings, 10) : null,
+      servings: recipe.servings ? parseInt(recipe.servings, 10) : 4,
       ingredients: recipe.ingredients,
       steps: recipe.steps,
       photo_url: recipe.photo || null
@@ -749,7 +749,7 @@ async function renderDetailView(id) {
         <div class="section-label">Ingredients</div>
         <ul class="ingredient-list">
           ${r.ingredients.map(i => `
-            <li><span>${escapeHtml(i.name)}</span><span class="amt">${i.amount || ''} ${i.unit || ''}</span></li>
+            <li><span>${escapeHtml(i.name)}</span><span class="amt">${escapeHtml(formatIngredientAmount(i))}</span></li>
           `).join('')}
         </ul>
 
@@ -987,6 +987,18 @@ async function handleSave(existingId) {
     saveBtn.disabled = false;
     saveBtn.textContent = 'Save recipe';
   }
+}
+
+// Display-only fallback: if neither amount nor unit was specified, show
+// "To taste" instead of blank space. The underlying data stays genuinely
+// empty — this never gets written back to the database, so editing this
+// ingredient later shows real empty fields, not literal "To taste" text
+// sitting in the amount box.
+function formatIngredientAmount(ing) {
+  const amount = (ing.amount || '').toString().trim();
+  const unit = (ing.unit || '').toString().trim();
+  if (!amount && !unit) return 'To taste';
+  return [amount, unit].filter(Boolean).join(' ');
 }
 
 function getStepsForDisplay(recipe) {
