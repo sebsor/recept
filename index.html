@@ -468,7 +468,21 @@
   // ---- Fill these in from your Supabase project: Settings > API ----
   const SUPABASE_URL = 'https://giqilxztbdksygzgihzx.supabase.co';
   const SUPABASE_ANON_KEY = 'sb_publishable_CtlF7JfMYWzzf7QtrK2dEg_9-aZDxI-';
-  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  let supabaseClient;
+  try {
+    supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  } catch (err) {
+    // If this throws, the rest of the app's script never runs at all —
+    // which is exactly what produced a blank orange screen with no clue
+    // why. Showing this directly on the page (not just the console) means
+    // that failure is visible even on a phone with no dev tools open.
+    document.body.innerHTML = `
+      <div style="padding:60px 24px;color:#F7EEDD;font-family:sans-serif;text-align:center;">
+        <h1 style="font-size:20px;margin-bottom:12px;">Configuration error</h1>
+        <p>The app can't connect to its database — SUPABASE_URL or SUPABASE_ANON_KEY looks invalid.</p>
+      </div>`;
+    throw err;
+  }
 </script>
 <script>
 /* =========================================================================

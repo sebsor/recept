@@ -1,4 +1,4 @@
-const CACHE_NAME = 'our-menu-shell-v1';
+const CACHE_NAME = 'our-menu-shell-v2';
 
 // Only the app's own static files go in here — the shell that makes the
 // app launchable and installable. Recipe data itself is never cached (see
@@ -41,7 +41,26 @@ self.addEventListener('fetch', (event) => {
   // through to the network, never intercepted or cached here.
   if (url.origin !== self.location.origin) return;
 
+  // Stale-while-revalidate: serve whatever's cached immediately (fast,
+  // and works offline), but ALWAYS also fetch fresh in the background and
+  // overwrite the cache for next time — regardless of whether anything
+  // was cached already. This is what fixes the "installed app stuck on
+  // day-one code" bug: a plain cache-first strategy only ever updates
+  // when sw.js itself changes, so every index.html fix since day one
+  // silently never reached anyone with the app already installed. With
+  // this, the worst case is ONE stale load right after a change ships —
+  // the very next launch is always current, with no version bump needed.
   event.respondWith(
-    caches.match(event.request).then((cached) => cached || fetch(event.request))
+    caches.open(CACHE_NAME).then(async (cache) => {
+      const cached = await cache.match(event.request);
+      const networkFetch = fetch(event.request)
+        .then((response) => {
+          cache.put(event.request, response.clone());
+          return response;
+        })
+        .catch(() => cached); // offline with nothing cached yet: fail gracefully
+
+      return cached || networkFetch;
+    })
   );
 });
