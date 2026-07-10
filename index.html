@@ -513,6 +513,10 @@
      matches how the rest of this app is loaded). Exposes a global `supabase`
      object with .createClient(), used just below to make our one shared connection. -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- html2canvas: renders a DOM element to a canvas/image client-side. Used
+     by the Share button to turn the recipe detail card into a real image
+     someone can receive and open without needing the app themselves. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
   // ---- Fill these in from your Supabase project: Settings > API ----
   const SUPABASE_URL = 'https://giqilxztbdksygzgihzx.supabase.co';
@@ -804,6 +808,7 @@ async function renderDetailView(id) {
           <div class="detail-servings">Serves ${r.servings || '—'}</div>
           <div class="detail-actions">
             <button class="btn btn-secondary" onclick="navigateTo('/edit/${r.id}')">Edit</button>
+            <button class="btn btn-secondary js-share-btn" onclick="handleShare('${r.id}')">Share</button>
             <button class="btn btn-danger" onclick="handleDelete('${r.id}')">Delete</button>
           </div>
         </div>
@@ -834,7 +839,58 @@ async function handleDelete(id) {
   }
 }
 
-let editState = { ingredients: [], photo: null };
+// Renders the recipe's content-panel (photo, ingredients, steps — NOT the
+// toolbar with Edit/Share/Delete, which makes no sense in a shared image)
+// to a PNG via html2canvas, then hands it to the native share sheet on
+// devices that support sharing files, or falls back to a plain download.
+async function handleShare(id) {
+  const shareBtn = document.querySelector('.js-share-btn');
+  const originalText = shareBtn.textContent;
+  shareBtn.disabled = true;
+  shareBtn.textContent = 'Generating…';
+
+  try {
+    const panel = document.querySelector('#view-detail .content-panel');
+    const canvas = await html2canvas(panel, {
+      scale: 2,               // retina-quality output, not a blurry 1x capture
+      useCORS: true,          // the recipe photo lives on Supabase, a different
+                               // origin — this asks the browser to attempt
+                               // loading it anyway rather than leaving a gap
+      backgroundColor: '#F3EAD9' // matches --bone; avoids a black/transparent
+                                  // background if anything fails to paint
+    });
+
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+    const recipe = await RecipeRepository.get(id);
+    const safeName = (recipe?.title || 'recipe').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const file = new File([blob], `${safeName}.png`, { type: 'image/png' });
+
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: recipe?.title || 'Recipe' });
+    } else {
+      // Desktop browsers mostly don't support sharing files at all — this
+      // just downloads the image instead, which is the closest equivalent.
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${safeName}.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  } catch (err) {
+    // AbortError fires when someone opens the share sheet and just closes
+    // it without picking anything — that's a cancel, not a failure.
+    if (err.name !== 'AbortError') {
+      console.error('Share failed:', err);
+      alert("Couldn't generate the image — check your connection and try again.");
+    }
+  } finally {
+    shareBtn.disabled = false;
+    shareBtn.textContent = originalText;
+  }
+}
+
+let editState = { sections: [], photo: null };
 // The original DB row being edited (or null for a new recipe) — set once
 // per navigation into this view by renderEditView, then just read (never
 // reset) by renderEditForm, so mid-edit refreshes (photo pick, add cuisine)
