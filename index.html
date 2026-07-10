@@ -935,14 +935,15 @@ async function renderEditForm() {
 
         <div class="form-field">
           <label for="f-title">Title</label>
-          <input type="text" id="f-title" value="${escapeHtml(editState.title)}" placeholder="Green curry">
+          <input type="text" id="f-title" value="${escapeHtml(editState.title)}" placeholder="Green curry"
+            oninput="editState.title = this.value">
         </div>
 
         <div class="form-row">
           <div class="form-field">
             <label for="f-cuisine">Cuisine</label>
             <div class="cuisine-row">
-              <select id="f-cuisine">
+              <select id="f-cuisine" onchange="editState.cuisine = this.value">
                 <option value="">Select...</option>
                 ${cuisines.map(c => `<option value="${c}" ${editState.cuisine === c ? 'selected' : ''}>${c}</option>`).join('')}
               </select>
@@ -951,7 +952,8 @@ async function renderEditForm() {
           </div>
           <div class="form-field">
             <label for="f-servings">Servings</label>
-            <input type="number" id="f-servings" min="1" value="${escapeHtml(String(editState.servings || ''))}" placeholder="4">
+            <input type="number" id="f-servings" min="1" value="${escapeHtml(String(editState.servings || ''))}" placeholder="4"
+              oninput="editState.servings = this.value">
           </div>
         </div>
 
@@ -1095,8 +1097,8 @@ async function handleAddCuisine() {
   if (!name || !name.trim()) return;
   try {
     await RecipeRepository.addCuisine(name.trim());
+    editState.cuisine = name.trim();
     await renderEditForm();
-    document.getElementById('f-cuisine').value = name.trim();
   } catch (err) {
     console.error('Add cuisine failed:', err);
     alert("Couldn't add that cuisine — check your connection and try again.");
