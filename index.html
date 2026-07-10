@@ -309,6 +309,25 @@
     display: inline-block;
   }
 
+  /* A named section ("Sauce", "Salad") — sits above that section's own
+     Ingredients/Steps labels. The top border/spacing visually separates
+     it from whatever part came before it; the first section in a recipe
+     doesn't need that separation since there's nothing above it yet. */
+  .part-heading {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--rust);
+    margin: 32px 0 4px;
+    padding-top: 24px;
+    border-top: 1px solid var(--line-on-bone);
+  }
+  .part-heading-first {
+    border-top: none;
+    padding-top: 0;
+    margin-top: 8px;
+  }
+
   .ingredient-list { list-style: none; padding: 0; margin: 0; }
   .ingredient-list li {
     display: flex;
@@ -353,6 +372,36 @@
 
   .cuisine-row { display: flex; gap: 8px; align-items: center; }
   .cuisine-row select { flex: 1; }
+
+  /* A section groups its own ingredients+steps into one visually bounded
+     block — the dashed-ish solid border reads as "a detachable module,"
+     consistent with the photo-upload dashed-border language elsewhere in
+     this form, so multi-section recipes don't just look like a long
+     undifferentiated list of fields. */
+  .recipe-section-block {
+    border: 1px solid var(--line-on-bone);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .section-block-header {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .section-name-input {
+    flex: 1;
+    font-weight: 600;
+  }
+  .sub-field-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted-on-bone);
+    margin: 14px 0 6px;
+  }
+  .sub-field-label:first-of-type { margin-top: 0; }
 
   .ingredient-row {
     display: grid;
@@ -466,8 +515,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
   // ---- Fill these in from your Supabase project: Settings > API ----
-  const SUPABASE_URL = 'https://giqilxztbdksygzgihzx.supabase.co';
-  const SUPABASE_ANON_KEY = 'sb_publishable_CtlF7JfMYWzzf7QtrK2dEg_9-aZDxI-';
+  const SUPABASE_URL = 'YOUR_SUPABASE_PROJECT_URL';
+  const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
   let supabaseClient;
   try {
     supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -518,8 +567,7 @@ const RecipeRepository = {
       title: recipe.title,
       cuisine: recipe.cuisine || null,
       servings: recipe.servings ? parseInt(recipe.servings, 10) : 4,
-      ingredients: recipe.ingredients,
-      steps: recipe.steps,
+      sections: recipe.sections,
       photo_url: recipe.photo || null
     };
 
@@ -580,8 +628,7 @@ function rowToRecipe(row) {
     title: row.title,
     cuisine: row.cuisine,
     servings: row.servings,
-    ingredients: row.ingredients || [],
-    steps: row.steps || [],
+    sections: row.sections || [],
     photo: row.photo_url,
     createdAt: row.created_at
   };
@@ -682,9 +729,10 @@ async function renderListView() {
 async function updateRecipeGrid() {
   const recipes = await RecipeRepository.getAll();
   const filtered = recipes.filter(r => {
-    const matchesSearch = !listState.search ||
-      r.title.toLowerCase().includes(listState.search.toLowerCase()) ||
-      r.ingredients.some(i => i.name.toLowerCase().includes(listState.search.toLowerCase()));
+    const q = listState.search.toLowerCase();
+    const matchesSearch = !q ||
+      r.title.toLowerCase().includes(q) ||
+      r.sections.some(sec => sec.ingredients.some(i => i.name.toLowerCase().includes(q)));
     const matchesCuisine = !listState.cuisine || r.cuisine === listState.cuisine;
     return matchesSearch && matchesCuisine;
   });
@@ -760,17 +808,20 @@ async function renderDetailView(id) {
           </div>
         </div>
 
-        <div class="section-label">Ingredients</div>
-        <ul class="ingredient-list">
-          ${r.ingredients.map(i => `
-            <li><span>${escapeHtml(i.name)}</span><span class="amt">${escapeHtml(formatIngredientAmount(i))}</span></li>
-          `).join('')}
-        </ul>
+        ${r.sections.map((sec, idx) => `
+          ${sec.name ? `<div class="part-heading${idx === 0 ? ' part-heading-first' : ''}">${escapeHtml(sec.name)}</div>` : ''}
+          <div class="section-label">Ingredients</div>
+          <ul class="ingredient-list">
+            ${sec.ingredients.map(i => `
+              <li><span>${escapeHtml(i.name)}</span><span class="amt">${escapeHtml(formatIngredientAmount(i))}</span></li>
+            `).join('')}
+          </ul>
 
-        <div class="section-label">Steps</div>
-        <ol class="steps-list">
-          ${getStepsForDisplay(r).map(s => `<li>${escapeHtml(s)}</li>`).join('')}
-        </ol>
+          <div class="section-label">Steps</div>
+          <ol class="steps-list">
+            ${sec.steps.map(s => `<li>${escapeHtml(s)}</li>`).join('')}
+          </ol>
+        `).join('')}
       </div>
     </div>
   `;
@@ -797,14 +848,14 @@ async function renderEditView(id) {
   const existing = id ? await RecipeRepository.get(id) : null;
   editingExisting = existing;
 
-  const existingSteps = existing
-    ? (Array.isArray(existing.steps) ? existing.steps.slice()
-        : (existing.instructions ? existing.instructions.split('\n').filter(s => s.trim()) : ['']))
-    : [''];
-
   editState = existing
-    ? { ...existing, ingredients: existing.ingredients.map(i => ({ ...i })), steps: existingSteps }
-    : { title: '', cuisine: '', servings: '', ingredients: [{ name: '', amount: '', unit: '' }], steps: [''], photo: null };
+    ? { ...existing, sections: existing.sections.map(sec => ({
+        name: sec.name || '',
+        ingredients: sec.ingredients.map(i => ({ ...i })),
+        steps: sec.steps.slice()
+      })) }
+    : { title: '', cuisine: '', servings: '', photo: null,
+        sections: [{ name: '', ingredients: [{ name: '', amount: '', unit: '' }], steps: [''] }] };
 
   await renderEditForm();
 }
@@ -857,15 +908,9 @@ async function renderEditForm() {
         </div>
 
         <div class="form-field">
-          <label>Ingredients</label>
-          <div id="ingredient-rows"></div>
-          <button type="button" class="add-ingredient-btn" onclick="handleAddIngredientRow()">+ Add ingredient</button>
-        </div>
-
-        <div class="form-field">
-          <label>Steps</label>
-          <div id="step-rows"></div>
-          <button type="button" class="add-ingredient-btn" onclick="handleAddStepRow()">+ Add step</button>
+          <label>Recipe sections</label>
+          <div id="sections-container"></div>
+          <button type="button" class="add-ingredient-btn" onclick="handleAddSection()">+ Add section (e.g. Sauce, Salad)</button>
         </div>
 
         <div class="form-actions">
@@ -876,69 +921,117 @@ async function renderEditForm() {
     </div>
   `;
 
-  renderIngredientRows();
-  renderStepRows();
+  renderSections();
 
   document.getElementById('f-photo').addEventListener('change', handlePhotoUpload);
 }
 
-function renderIngredientRows() {
-  const el = document.getElementById('ingredient-rows');
-  el.innerHTML = editState.ingredients.map((ing, idx) => `
+// Renders every section block (name field + its own ingredient/step rows)
+// into #sections-container, then renders each section's rows into their
+// own scoped containers (ingredient-rows-0, step-rows-1, etc.) — section
+// index is baked into every id and every inline handler below it.
+function renderSections() {
+  const container = document.getElementById('sections-container');
+  container.innerHTML = editState.sections.map((sec, sIdx) => `
+    <div class="recipe-section-block">
+      <div class="section-block-header">
+        <input type="text" class="section-name-input" placeholder="Section name (optional) — e.g. Sauce"
+          value="${escapeHtml(sec.name)}"
+          oninput="editState.sections[${sIdx}].name = this.value">
+        ${editState.sections.length > 1
+          ? `<button type="button" class="btn-icon" onclick="handleRemoveSection(${sIdx})" aria-label="Remove section">&times;</button>`
+          : ''}
+      </div>
+
+      <label class="sub-field-label">Ingredients</label>
+      <div id="ingredient-rows-${sIdx}"></div>
+      <button type="button" class="add-ingredient-btn" onclick="handleAddIngredientRow(${sIdx})">+ Add ingredient</button>
+
+      <label class="sub-field-label">Steps</label>
+      <div id="step-rows-${sIdx}"></div>
+      <button type="button" class="add-ingredient-btn" onclick="handleAddStepRow(${sIdx})">+ Add step</button>
+    </div>
+  `).join('');
+
+  editState.sections.forEach((sec, sIdx) => {
+    renderIngredientRows(sIdx);
+    renderStepRows(sIdx);
+  });
+}
+
+function handleAddSection() {
+  editState.sections.push({ name: '', ingredients: [{ name: '', amount: '', unit: '' }], steps: [''] });
+  renderSections();
+}
+function handleRemoveSection(sIdx) {
+  editState.sections.splice(sIdx, 1);
+  // Never leave zero sections — same "always at least one row" pattern
+  // used for ingredients/steps, just one level up.
+  if (editState.sections.length === 0) {
+    editState.sections.push({ name: '', ingredients: [{ name: '', amount: '', unit: '' }], steps: [''] });
+  }
+  renderSections();
+}
+
+function renderIngredientRows(sIdx) {
+  const el = document.getElementById(`ingredient-rows-${sIdx}`);
+  const ingredients = editState.sections[sIdx].ingredients;
+  el.innerHTML = ingredients.map((ing, idx) => `
     <div class="ingredient-row">
       <input type="text" placeholder="Ingredient" value="${escapeHtml(ing.name)}"
-        oninput="editState.ingredients[${idx}].name = this.value">
+        oninput="editState.sections[${sIdx}].ingredients[${idx}].name = this.value">
       <input type="text" placeholder="Amount" value="${escapeHtml(String(ing.amount || ''))}"
-        oninput="editState.ingredients[${idx}].amount = this.value">
+        oninput="editState.sections[${sIdx}].ingredients[${idx}].amount = this.value">
       <input type="text" placeholder="Unit" value="${escapeHtml(ing.unit || '')}"
-        oninput="editState.ingredients[${idx}].unit = this.value">
-      <button type="button" class="btn-icon" onclick="handleRemoveIngredientRow(${idx})" aria-label="Remove ingredient">&times;</button>
+        oninput="editState.sections[${sIdx}].ingredients[${idx}].unit = this.value">
+      <button type="button" class="btn-icon" onclick="handleRemoveIngredientRow(${sIdx}, ${idx})" aria-label="Remove ingredient">&times;</button>
     </div>
   `).join('');
 }
 
-function handleAddIngredientRow() {
-  editState.ingredients.push({ name: '', amount: '', unit: '' });
-  renderIngredientRows();
+function handleAddIngredientRow(sIdx) {
+  editState.sections[sIdx].ingredients.push({ name: '', amount: '', unit: '' });
+  renderIngredientRows(sIdx);
 }
-function handleRemoveIngredientRow(idx) {
-  editState.ingredients.splice(idx, 1);
-  renderIngredientRows();
+function handleRemoveIngredientRow(sIdx, idx) {
+  editState.sections[sIdx].ingredients.splice(idx, 1);
+  renderIngredientRows(sIdx);
 }
 
-function renderStepRows() {
-  const el = document.getElementById('step-rows');
-  el.innerHTML = editState.steps.map((step, idx) => `
+function renderStepRows(sIdx) {
+  const el = document.getElementById(`step-rows-${sIdx}`);
+  const steps = editState.sections[sIdx].steps;
+  el.innerHTML = steps.map((step, idx) => `
     <div class="step-row">
       <span class="step-number">${idx + 1}.</span>
       <textarea placeholder="Describe this step..."
-        oninput="editState.steps[${idx}] = this.value">${escapeHtml(step)}</textarea>
+        oninput="editState.sections[${sIdx}].steps[${idx}] = this.value">${escapeHtml(step)}</textarea>
       <div class="step-controls">
-        <button type="button" class="btn-icon" onclick="handleMoveStep(${idx}, -1)"
+        <button type="button" class="btn-icon" onclick="handleMoveStep(${sIdx}, ${idx}, -1)"
           aria-label="Move step up" ${idx === 0 ? 'disabled' : ''}>&uarr;</button>
-        <button type="button" class="btn-icon" onclick="handleMoveStep(${idx}, 1)"
-          aria-label="Move step down" ${idx === editState.steps.length - 1 ? 'disabled' : ''}>&darr;</button>
-        <button type="button" class="btn-icon" onclick="handleRemoveStepRow(${idx})" aria-label="Remove step">&times;</button>
+        <button type="button" class="btn-icon" onclick="handleMoveStep(${sIdx}, ${idx}, 1)"
+          aria-label="Move step down" ${idx === steps.length - 1 ? 'disabled' : ''}>&darr;</button>
+        <button type="button" class="btn-icon" onclick="handleRemoveStepRow(${sIdx}, ${idx})" aria-label="Remove step">&times;</button>
       </div>
     </div>
   `).join('');
 }
 
-function handleAddStepRow() {
-  editState.steps.push('');
-  renderStepRows();
+function handleAddStepRow(sIdx) {
+  editState.sections[sIdx].steps.push('');
+  renderStepRows(sIdx);
 }
-function handleRemoveStepRow(idx) {
-  editState.steps.splice(idx, 1);
-  if (editState.steps.length === 0) editState.steps.push('');
-  renderStepRows();
+function handleRemoveStepRow(sIdx, idx) {
+  editState.sections[sIdx].steps.splice(idx, 1);
+  if (editState.sections[sIdx].steps.length === 0) editState.sections[sIdx].steps.push('');
+  renderStepRows(sIdx);
 }
-function handleMoveStep(idx, direction) {
+function handleMoveStep(sIdx, idx, direction) {
+  const steps = editState.sections[sIdx].steps;
   const newIdx = idx + direction;
-  if (newIdx < 0 || newIdx >= editState.steps.length) return;
-  const steps = editState.steps;
+  if (newIdx < 0 || newIdx >= steps.length) return;
   [steps[idx], steps[newIdx]] = [steps[newIdx], steps[idx]];
-  renderStepRows();
+  renderStepRows(sIdx);
 }
 
 async function handleAddCuisine() {
@@ -983,13 +1076,25 @@ async function handleSave(existingId) {
       photoUrl = await RecipeRepository.uploadPhoto(editState.photoFile);
     }
 
+    // Clean each section the same way the old flat version cleaned a
+    // single ingredient/step list — trim, drop blank rows — then drop any
+    // section that ended up with nothing in it at all (no name, no
+    // ingredients, no steps), so an accidental "+ Add section" click with
+    // nothing filled in doesn't get saved as clutter.
+    const sections = editState.sections
+      .map(sec => ({
+        name: sec.name.trim(),
+        ingredients: sec.ingredients.filter(i => i.name.trim()),
+        steps: sec.steps.map(s => s.trim()).filter(Boolean)
+      }))
+      .filter(sec => sec.name || sec.ingredients.length || sec.steps.length);
+
     const recipe = {
       id: existingId || null,
       title,
       cuisine: document.getElementById('f-cuisine').value,
       servings: document.getElementById('f-servings').value,
-      ingredients: editState.ingredients.filter(i => i.name.trim()),
-      steps: editState.steps.map(s => s.trim()).filter(Boolean),
+      sections,
       photo: photoUrl
     };
 
@@ -1013,12 +1118,6 @@ function formatIngredientAmount(ing) {
   const unit = (ing.unit || '').toString().trim();
   if (!amount && !unit) return 'To taste';
   return [amount, unit].filter(Boolean).join(' ');
-}
-
-function getStepsForDisplay(recipe) {
-  if (Array.isArray(recipe.steps) && recipe.steps.length) return recipe.steps;
-  if (recipe.instructions) return recipe.instructions.split('\n').filter(s => s.trim());
-  return [];
 }
 
 function escapeHtml(str) {
